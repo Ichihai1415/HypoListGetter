@@ -146,7 +146,7 @@ namespace HypoListGetter
         {//37°12.6′N
             var d = (int)ll;
             var m = (ll - d) * 60;
-            return $"{d}°{Math.Round(m, MidpointRounding.AwayFromZero):F1}′" + (isLat ? "N" : "E");
+            return $"{d}°{Math.Round(m, 2, MidpointRounding.AwayFromZero):F1}′" + (isLat ? "N" : "E");
         }
 
         /// <summary>
