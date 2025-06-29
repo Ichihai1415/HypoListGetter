@@ -11,7 +11,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <Description>気象庁震源リストのデータを取得し震度データベース形式に変換します。</Description>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <Title>$(AssemblyName)</Title>
     <AssemblyVersion>$(Version)</AssemblyVersion>
     <FileVersion>$(Version)</FileVersion>
