@@ -1,5 +1,4 @@
 ﻿using AngleSharp.Html.Parser;
-using System.Text;
 
 namespace HypoListGetter
 {
@@ -10,11 +9,11 @@ namespace HypoListGetter
     {
         static void Main(string[] args)
         {
-            var addText = File.Exists("lastGet.dat") ? "最終取得は " + File.ReadAllText("lastGet.dat") + " です。" : "2023/04/01から有効です。";
+            var addText = File.Exists("lastGetPlus1.dat") ? "最終取得の翌日 " + File.ReadAllText("lastGetPlus1.dat") + " がおすすめです。" : "2023/04/01から有効です。";
             var startDate = (DateTime)ConAsk("開始日時を入力してください。" + addText, typeof(DateTime));
             var EndDate = (DateTime)ConAsk("終了日時を入力してください。二日前の " + DateTime.Now.AddDays(-2).ToString("yyyy/MM/dd") + " がおすすめです。", typeof(DateTime));
             DateTime getDate;
-            ConWrite($"高速大量アクセスを防ぐため取得毎に1秒待機します。予想処理時間は{(EndDate - startDate).TotalDays}秒({(EndDate - startDate).TotalDays / 60d:F1}分)+取得・処理時間です。");
+            ConWrite($"高速大量アクセスを防ぐため取得毎に1秒待機します。予想処理時間は{(EndDate - startDate + TimeSpan.FromDays(1)).TotalDays}秒({(EndDate - startDate + TimeSpan.FromDays(1)).TotalDays / 60d:F1}分)+取得・処理時間です。");
             for (getDate = startDate; getDate <= EndDate; getDate += TimeSpan.FromDays(1))
             {
                 GetHypo(getDate);
@@ -39,65 +38,53 @@ namespace HypoListGetter
                 //ConWrite("解析中...");
                 var document = parser.ParseDocument(response);
                 var pre = document.QuerySelector("pre")!.TextContent;
-                var lines = pre.Split('\n', StringSplitOptions.RemoveEmptyEntries).Skip(2);
-                var datas = lines.Select(HypoText2Data);
-                ConWrite($"取得 : {getDate:yyyy/MM/dd} ,   データ個数 : {datas.Count()}", ConsoleColor.Green);
+                var lines_converted = pre.Split('\n', StringSplitOptions.RemoveEmptyEntries).Skip(2).Select(HypoText2EqdbData);
+                //var datas = lines.Select(HypoText2Data);
+                ConWrite($"取得: {getDate:yyyy/MM/dd}, データ個数: {lines_converted.Count()}", ConsoleColor.Green);
 
-                var csv_eqdb = new StringBuilder("地震の発生日,地震の発生時刻,震央地名,緯度,経度,深さ,Ｍ,最大震度\n");
-                var csv_original = new StringBuilder("地震の発生日時,震央地名,緯度,経度,深さ,Ｍ,最大震度\n");
-                var savePath_eqdb = $"output\\eqdb\\{getDate.Year}\\{getDate.Month}\\{getDate.Day}.csv";
-                var savePath_original = savePath_eqdb.Replace("eqdb", "original");
-
+                //var csv = new StringBuilder("地震の発生日,地震の発生時刻,震央地名,緯度,経度,深さ,Ｍ,最大震度\n");
+                var csv = "地震の発生日,地震の発生時刻,震央地名,緯度,経度,深さ,Ｍ,最大震度\n" + (string.Join('\n', lines_converted))
+                    .Replace(",- km,", ",不明,").Replace(",-,", ",不明,").Replace("'", "′")
+                    .Replace("/1/", "/01/").Replace("/2/", "/02/").Replace("/3/", "/03/").Replace("/4/", "/04/").Replace("/5/", "/05/")//月調整
+                    .Replace("/6/", "/06/").Replace("/7/", "/07/").Replace("/8/", "/08/").Replace("/9/", "/09/")
+                    .Replace("/1,", "/01,").Replace("/2,", "/02,").Replace("/3,", "/03,").Replace("/4,", "/04,").Replace("/5,", "/05,")//日調整
+                    .Replace("/6,", "/06,").Replace("/7,", "/07,").Replace("/8,", "/08,").Replace("/9,", "/09,")
+                    .Replace(":1.", ",01.").Replace(":2.", ",02.").Replace(":3.", ",03.").Replace(":4.", ",04.").Replace(":5.", ",05.")//秒調整
+                    .Replace(":6.", ",06.").Replace(":7.", ",07.").Replace(":8.", ",08.").Replace(":9.", ",09.").Replace(":0.", ",00.")
+                    .Replace("°1.", "°01.").Replace("°2.", "°02.").Replace("°3.", "°03.").Replace("°4.", "°04.").Replace("°5.", "°05.")//緯度経度分調整
+                    .Replace("°6.", "°06.").Replace("°7.", "°07.").Replace("°8.", "°08.").Replace("°9.", "°09.").Replace("°0.", "°00.");
+                var savePath = $"output\\{getDate:yyyy\\\\MM\\\\dd}.csv";
+                /*
                 foreach (var data in datas)
                 {
                     //2024/01/03,20:07:02.4,能登半島沖,37°12.6′N,136°40.9′E,8 km,2.9,震度１
-                    csv_eqdb.Append(data.Time.ToString("yyyy/MM/dd"));
-                    csv_eqdb.Append(',');
-                    csv_eqdb.Append(data.Time.ToString("HH:mm:ss.f"));
-                    csv_eqdb.Append(',');
-                    csv_eqdb.Append(data.Hypo);
-                    csv_eqdb.Append(',');
-                    csv_eqdb.Append(LatLonDouble2String(data.Lat, true));
-                    csv_eqdb.Append(',');
-                    csv_eqdb.Append(LatLonDouble2String(data.Lon, false));
-                    csv_eqdb.Append(',');
-                    csv_eqdb.Append(data.Depth);
-                    csv_eqdb.Append(" km,");
-                    csv_eqdb.Append(data.Mag);
-                    csv_eqdb.Append(",---");
-                    csv_eqdb.AppendLine();
+                    csv.Append(data.Time.ToString("yyyy/MM/dd"));
+                    csv.Append(',');
+                    csv.Append(data.Time.ToString("HH:mm:ss.f"));
+                    csv.Append(',');
+                    csv.Append(data.Hypo);
+                    csv.Append(',');
+                    csv.Append(LatLonDouble2String(data.Lat, true));
+                    csv.Append(',');
+                    csv.Append(LatLonDouble2String(data.Lon, false));
+                    csv.Append(',');
+                    csv.Append(data.Depth);
+                    csv.Append(" km,");
+                    csv.Append(data.Mag);
+                    csv.Append(",---");
+                    csv.AppendLine();
+                }*/
 
-                    csv_original.Append(data.Time.ToString("yyyy/MM/dd HH:mm:ss.f"));
-                    csv_original.Append(',');
-                    csv_original.Append(data.Hypo);
-                    csv_original.Append(',');
-                    csv_original.Append(data.Lat);
-                    csv_original.Append(',');
-                    csv_original.Append(data.Lon);
-                    csv_original.Append(',');
-                    csv_original.Append(data.Depth);
-                    csv_original.Append(',');
-                    csv_original.Append(data.Mag);
-                    csv_original.Append(",-");
-                    csv_original.AppendLine();
-                }
-
-                Directory.CreateDirectory("output");
-                Directory.CreateDirectory("output\\eqdb");
-                Directory.CreateDirectory($"output\\eqdb\\{getDate.Year}");
-                Directory.CreateDirectory($"output\\eqdb\\{getDate.Year}\\{getDate.Month}");
-                Directory.CreateDirectory("output\\original");
-                Directory.CreateDirectory($"output\\original\\{getDate.Year}");
-                Directory.CreateDirectory($"output\\original\\{getDate.Year}\\{getDate.Month}");
-                File.WriteAllText(savePath_eqdb, csv_eqdb.ToString());
-                File.WriteAllText(savePath_original, csv_original.ToString());
+                Directory.CreateDirectory($"output\\{getDate:yyyy\\\\MM}");
+                File.WriteAllText(savePath, csv.ToString());
                 //ConWrite("保存しました。");
-                File.WriteAllText("lastGet.dat", getDate.ToString("yyyy/MM/dd"));
+                File.WriteAllText("lastGetPlus1.dat", getDate.AddDays(1).ToString("yyyy/MM/dd"));
                 Thread.Sleep(1000);
             }
             catch (Exception ex)
             {
                 ConWrite(ex);
+                throw;
             }
         }
 
@@ -110,7 +97,7 @@ namespace HypoListGetter
         {
             //0    1  2  3     4     5         6              7      8    9
             //2024 11 22 00:28 56.7  41° 1.5'N 141° 3.6'E   13     0.2  陸奥湾                   //33°18.2'N 135°27.9'E
-            var datas = text.Replace("° ", "°").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var datas = text.Replace("° ", "°").Split(' ', StringSplitOptions.RemoveEmptyEntries);//無駄に空白が入るため
             var dt = new Data
             {
                 Time = DateTime.Parse($"{datas[0]}/{datas[1]}/{datas[2]} {datas[3]}:{datas[4]}"),
@@ -123,6 +110,18 @@ namespace HypoListGetter
             };
             dt.Simple = dt.Time + "," + dt.Hypo + "," + dt.Lat + "," + dt.Lon + "," + dt.Depth + "," + dt.Mag + ",-";
             return dt;
+        }
+
+        /// <summary>
+        /// 震源リスト1行のデータを震度データベース形式に変換します。
+        /// </summary>
+        /// <param name="text">csv1行</param>
+        /// <returns>震度データベース形式のデータ</returns>
+        public static string HypoText2EqdbData(string text)
+        {
+            var datas = text.Replace("° ", "°").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return (datas[0] + "/" + datas[1] + "/" + datas[2] + "," + datas[3] + ":" + datas[4] + "," + datas[9] + "," + datas[5] + "," + datas[6] + "," +
+                datas[7] + " km," + datas[8] + ",---");
         }
 
         /// <summary>
@@ -182,7 +181,7 @@ namespace HypoListGetter
             /// <summary>
             /// マグニチュード
             /// </summary>
-            public double Mag { get; set; }//不明を-1にしてるけど震源一覧でMマイナスあるからだめかも
+            public double Mag { get; set; }
 
             /// <summary>
             /// 最大震度
