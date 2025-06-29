@@ -49,8 +49,8 @@ namespace HypoListGetter
                     .Replace("/6/", "/06/").Replace("/7/", "/07/").Replace("/8/", "/08/").Replace("/9/", "/09/")
                     .Replace("/1,", "/01,").Replace("/2,", "/02,").Replace("/3,", "/03,").Replace("/4,", "/04,").Replace("/5,", "/05,")//日調整
                     .Replace("/6,", "/06,").Replace("/7,", "/07,").Replace("/8,", "/08,").Replace("/9,", "/09,")
-                    .Replace(":1.", ",01.").Replace(":2.", ",02.").Replace(":3.", ",03.").Replace(":4.", ",04.").Replace(":5.", ",05.")//秒調整
-                    .Replace(":6.", ",06.").Replace(":7.", ",07.").Replace(":8.", ",08.").Replace(":9.", ",09.").Replace(":0.", ",00.")
+                    .Replace(":1.", ":01.").Replace(":2.", ":02.").Replace(":3.", ":03.").Replace(":4.", ":04.").Replace(":5.", ":05.")//秒調整
+                    .Replace(":6.", ":06.").Replace(":7.", ":07.").Replace(":8.", ":08.").Replace(":9.", ":09.").Replace(":0.", ":00.")
                     .Replace("°1.", "°01.").Replace("°2.", "°02.").Replace("°3.", "°03.").Replace("°4.", "°04.").Replace("°5.", "°05.")//緯度経度分調整
                     .Replace("°6.", "°06.").Replace("°7.", "°07.").Replace("°8.", "°08.").Replace("°9.", "°09.").Replace("°0.", "°00.");
                 var savePath = $"output\\{getDate:yyyy\\\\MM\\\\dd}.csv";
